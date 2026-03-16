@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import anthropic
 import os
@@ -12,24 +13,12 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origin_regex=".*",
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
     allow_credentials=False,
+    max_age=3600,
 )
-
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-
-@app.options("/chat")
-async def options_chat():
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
-        }
-    )
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -49,6 +38,17 @@ Keep answers concise (2-4 sentences)."""
 class ChatRequest(BaseModel):
     message: str
 
+@app.options("/chat")
+async def options_chat():
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+
 @app.post("/chat")
 async def chat(req: ChatRequest):
     message = client.messages.create(
@@ -57,4 +57,7 @@ async def chat(req: ChatRequest):
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": req.message}]
     )
-    return {"reply": message.content[0].text}
+    return JSONResponse(
+        content={"reply": message.content[0].text},
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
