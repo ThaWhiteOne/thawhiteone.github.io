@@ -816,8 +816,7 @@
         <label class="form-label">Message</label>
         <textarea class="form-textarea" placeholder="Tell me about your project..."></textarea>
       </div>
-      <button class="btn-primary" style="width:100%;text-align:center;display:block;padding:16px" onclick="this.textContent='Message Sent ✓';this.style.background='linear-gradient(135deg,#00f5c4,#00c49a)'">Send Message</button>
-    </div>
+        <button id="contactBtn" class="btn-primary" style="width:100%;text-align:center;display:block;padding:16px" onclick="sendContact()">Send Message</button>    </div>
   </div>
 </section>
 
@@ -1172,6 +1171,38 @@ window.addEventListener('scroll', () => {
   window.addEventListener('resize', () => { resize(); morphToSphere(); });
   resize(); initParticles(); draw();
 })();
+
+async function sendContact() {
+  const name = document.querySelector('.form-input[placeholder="John Smith"]').value;
+  const email = document.querySelector('.form-input[placeholder="john@company.com"]').value;
+  const message = document.querySelector('.form-textarea').value;
+  const btn = document.getElementById('contactBtn');
+
+  if (!name || !email || !message) {
+    btn.textContent = 'Please fill all fields!';
+    setTimeout(() => btn.textContent = 'Send Message', 2000);
+    return;
+  }
+
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+
+  try {
+    const response = await fetch('https://thawhiteonegithubio-production.up.railway.app/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, message })
+    });
+    const data = await response.json();
+    if (data.status === 'success') {
+      btn.textContent = 'Message Sent ✓';
+      btn.style.background = 'linear-gradient(135deg,#00f5c4,#00c49a)';
+    }
+  } catch(e) {
+    btn.textContent = 'Failed — try again';
+    btn.disabled = false;
+  }
+}
 </script>
 </body>
 </html>
